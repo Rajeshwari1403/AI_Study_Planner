@@ -10,9 +10,9 @@ const login = async (email, password) => {
   }
 };
 
-const register = async (name, email, password) => {
+const register = async (username, email, password) => {
   try {
-    const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, { name, email, password });
+    const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, { username, email, password });
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'An unknown Network error' };

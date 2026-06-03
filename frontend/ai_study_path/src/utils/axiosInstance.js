@@ -4,8 +4,8 @@ import { BASE_URL } from './apiPath';
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
-    Acccept: 'application/json',
+    'Accept': 'application/json', 
+    'Content-Type': 'application/json'
   },
 });
 

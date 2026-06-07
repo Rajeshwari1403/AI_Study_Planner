@@ -168,30 +168,28 @@ ${text.substring(0, 20000)}`;
  * @param {Array<Object>} chunks - Relevant document chunks
  * @returns {Promise<string>}
  */
-export const chatWithContext = async (question, chunks) => {
-  const context = chunks.map((c, i) => `[Chunk ${i + 1}]\n${c.content}`).join('\n\n');
+export const chatWithContext = async (question, context) => {
 
-  const prompt = `Based on the following context from a document, Analyse the context and answer the user's question. If the answer is not in the context, say so.
+  if (!context || context.trim().length === 0) {
+    return "No context found in document.";
+  }
 
+  const prompt = `
 Context:
 ${context}
 
-Question: ${question}
+Question:
+${question}
 
-Answer:`;
+Answer:
+`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-    });
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-lite",
+    contents: prompt,
+  });
 
-    const generatedText = response.text;
-    return generatedText;
-  } catch (error) {
-    console.error('Gemini API error:', error);
-    throw new Error('Failed to process chat request');
-  }
+  return response.text;
 };
 
 /**

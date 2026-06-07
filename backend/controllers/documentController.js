@@ -33,7 +33,7 @@ export const uploadDocument = async (req, res, next) => {
         }
 
         //Construct the URL for the uploaded file
-        const baseUrl = `http://localhost:${process.env.PORT || 8000}`;
+        const baseUrl = `http://localhost:${process.env.PORT || 5000}`;
         const fileUrl = `${baseUrl}/uploads/documents/${req.file.filename}`;
 
         // Create document record
@@ -68,10 +68,11 @@ export const uploadDocument = async (req, res, next) => {
 //Helper function to process PDF
 const processPDF = async (documentId, filePath) => {
     try {
-        const { text } = await extractTextFromPDF(filePath);
-
+const extracted = await extractTextFromPDF(filePath);
+const text = extracted?.text || extracted;
         // Create chunks
-        const chunks = chunkText(text, 500, 50);
+        const chunks = chunkText(text || "", 500, 50)
+    .filter(c => c && c.content && c.content.trim().length > 0);
 
         // Update document
         await Document.findByIdAndUpdate(documentId, {

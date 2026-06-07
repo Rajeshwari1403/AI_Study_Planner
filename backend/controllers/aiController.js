@@ -215,8 +215,14 @@ export const chat = async (req, res, next) => {
         }
 
         // Generate answer using Gemini
-        const answer = await geminiService.chatWithContext(question, relevantChunks);
+        const context = relevantChunks
+            .map(chunk => chunk.content)
+            .join("\n\n");
 
+        const answer = await geminiService.chatWithContext(
+            question,
+            context
+        );
         if (!chatHistory.history) {
             chatHistory.history = [];
         }
@@ -318,7 +324,7 @@ export const getChatHistory = async (req, res, next) => {
         const chatHistory = await ChatHistory.findOne({
             userId: req.user._id,
             documentId: documentId
-        }).select('messages');
+        }).select('history');
 
         if (!chatHistory) {
             return res.status(200).json({
@@ -330,9 +336,13 @@ export const getChatHistory = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            data: chatHistory.history,
+            data: Array.isArray(chatHistory.history)
+                ? chatHistory.history
+                : [],
             message: 'Chat history retrieved successfully'
         });
+
+        
     } catch (error) {
         next(error);
     }

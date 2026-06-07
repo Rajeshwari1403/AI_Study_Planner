@@ -156,27 +156,28 @@ export const findRelevantChunks = (
         'as', 'by', 'this', 'that', 'it'
     ]);
 
-    // Query words
+    // Extract query words
     const queryWords = query
         .toLowerCase()
         .split(/\s+/)
         .filter(w => w.length > 2 && !stopWords.has(w));
 
+    // If query is too small → return top chunks
     if (queryWords.length === 0) {
-
-        return chunks.slice(0, maxChunks).map(chunk => ({
-            content: chunk.content,
-            chunkIndex: chunk.chunkIndex,
-            pageNumber: chunk.pageNumber,
-            _id: chunk._id
-        }));
+        return chunks
+            .slice(0, maxChunks)
+            .map(chunk => ({
+                content: chunk.content || "",
+                chunkIndex: chunk.chunkIndex ?? 0,
+                pageNumber: chunk.pageNumber ?? 0,
+                _id: chunk._id
+            }));
     }
 
     const scoredChunks = chunks.map((chunk, index) => {
 
-        const content = chunk.content.toLowerCase();
-
-        const contentWords = content.split(/\s+/).length;
+        const content = (chunk.content || "").toLowerCase();
+        const contentWords = content.split(/\s+/).length || 1;
 
         let score = 0;
 
@@ -221,19 +222,32 @@ export const findRelevantChunks = (
         };
     });
 
-    return scoredChunks
-        .filter(chunk => chunk.score > 0)
-        .sort((a, b) => {
+    // Sort best matches first
+    const sorted = scoredChunks.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.matchedWords !== a.matchedWords) return b.matchedWords - a.matchedWords;
+        return a.chunkIndex - b.chunkIndex;
+    });
 
-            if (b.score !== a.score) {
-                return b.score - a.score;
-            }
+    // Take top results first
+    const top = sorted.slice(0, maxChunks);
 
-            if (b.matchedWords !== a.matchedWords) {
-                return b.matchedWords - a.matchedWords;
-            }
+    // 🔥 SAFE FALLBACK: if everything is weak, still return something
+    const hasGoodScore = top.some(c => c.score > 0);
 
-            return a.chunkIndex - b.chunkIndex;
-        })
-        .slice(0, maxChunks);
+    if (!hasGoodScore) {
+        return sorted.slice(0, maxChunks).map(c => ({
+            content: c.content,
+            chunkIndex: c.chunkIndex,
+            pageNumber: c.pageNumber,
+            _id: c._id
+        }));
+    }
+
+    return top.map(c => ({
+        content: c.content,
+        chunkIndex: c.chunkIndex,
+        pageNumber: c.pageNumber,
+        _id: c._id
+    }));
 };

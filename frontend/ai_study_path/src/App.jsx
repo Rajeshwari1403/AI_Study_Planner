@@ -42,8 +42,8 @@ const App = () => {
           <Route path="/documents/:id" element={<DocumentDetailPage />} />
           <Route path="/flashcards" element={<FlashcardListPage />} />
           <Route path="/documents/:id/flashcards" element={<FlashCardPage />} />
-          <Route path="/quizzes/:quizzId" element={<QuizzesPage />} />
-          <Route path="/quizzes/:quizzId/results" element={<QuizResultsPage />} />
+          <Route path="/quizzes/:quizId" element={<QuizzesPage />} />
+          <Route path="/quizzes/:quizId/results" element={<QuizResultsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 

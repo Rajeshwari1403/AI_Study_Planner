@@ -3,11 +3,41 @@ import Quiz from '../models/quiz.js';
 // @desc  Get quizzes for a document
 // @route GET /api/quizzes/:documentId
 // @access Private
-export const getQuizzes = async (req, res, next) => {
+{/*export const getQuizzes = async (req, res, next) => {
   try {
     const  quizzes = await Quiz.find({ 
       userId: req.user._id,
       documentId: req.params.documentId 
+    })
+    .populate('documentId', 'title filename')
+    .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: quizzes.length,
+      data: quizzes
+    });
+  } catch (error) {
+    next(error);
+  }
+};*/}
+
+export const getQuizzes = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+
+    // ✅ Stop the execution if the ID is invalid before Mongoose runs its query
+    if (!documentId || documentId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        error: 'A valid Document ID parameter is required',
+        statusCode: 400
+      });
+    }
+
+    const quizzes = await Quiz.find({ 
+      userId: req.user._id,
+      documentId: documentId 
     })
     .populate('documentId', 'title filename')
     .sort({ createdAt: -1 });
@@ -171,7 +201,7 @@ export const getQuizResults = async (req, res, next) => {
         correctAnswer: question.correctAnswer,
         selectedAnswer: userAnswer ?.selectedAnswer || null,
         isCorrect: userAnswer ?.isCorrect || false,
-        explainer: question.explaination
+        explainer: question.explanation
       };
     });
 

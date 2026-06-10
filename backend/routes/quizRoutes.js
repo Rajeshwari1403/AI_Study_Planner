@@ -13,8 +13,10 @@ const router = express.Router();
 // All routes are protected, user must be authenticated
 router.use(protect);
 
-router.get('/:documentId', getQuizzes);
 router.get('/quiz/:id', getQuizById);
+
+router.get('/:documentId', getQuizzes);
+
 router.post('/:id/submit', submitQuiz);
 router.get('/:id/results', getQuizResults);
 router.delete('/:id', deleteQuiz);

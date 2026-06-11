@@ -134,14 +134,31 @@ const QuizResultPage = () => {
 
         {detailedResults.map((result, index) => {
           const userAnswerIndex = result.options.findIndex(opt => 
-            opt.trim() === (result.selectedAnswer?.trim() || result.selectedAnswers?.trim())
+            opt.trim() === result.selectedAnswer?.trim()
           );
 
-          const correctAnswerIndex = result.correctAnswer.startsWith('0')
-             ? parseInt(result.correctAnswer.substring(1)) - 1
-             : result.options.findIndex(opt => opt === result.correctAnswer);
-          const isCorrect = result.isCorrect;
+          // Locate option index position cleanly using resilient matching boundaries
+          let correctAnswerIndex = result.options.findIndex(opt => {
+            const optNorm = opt.trim().toLowerCase();
+            const ansNorm = String(result.correctAnswer || '').trim().toLowerCase();
+            const cleanAns = ansNorm.replace(/^0*(\d+)\.?\s*/, '$1');
+            return optNorm === ansNorm || optNorm.includes(cleanAns) || ansNorm.includes(optNorm);
+          });
 
+          // ✅ FIX: Fallback conversion validation check across multiple bases
+          if (correctAnswerIndex === -1 && result.correctAnswer !== undefined && result.correctAnswer !== null) {
+            const parsedNum = parseInt(String(result.correctAnswer).replace(/^\D+/g, ''), 10);
+            if (!isNaN(parsedNum)) {
+              // Check if the AI saved it as a 1-based index or a 0-based index
+              if (parsedNum > 0 && parsedNum <= result.options.length) {
+                correctAnswerIndex = parsedNum - 1; // Convert 1-based index down to 0-based array position
+              } else if (parsedNum >= 0 && parsedNum < result.options.length) {
+                correctAnswerIndex = parsedNum;
+              }
+            }
+          }
+
+          const isCorrect = result.isCorrect;
           return (
             <div key={index} className='bg-white/80 backdrop-blur-xl border-2 border-slate-400 rounded-2xl p-6 shadow-lg shadow-slate-200/60'>
               <div className='flex items-start justify-between gap-4 mb-3'>

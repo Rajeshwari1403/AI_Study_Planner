@@ -82,11 +82,14 @@ export const getQuizById = async (req, res, next) => {
 // @desc  Submit quiz answers
 // @route POST /api/quizzes/:id/submit
 // @access Private
+// @desc   Submit quiz answers
+// @route  POST /api/quizzes/:id/submit
+// @access Private
 export const submitQuiz = async (req, res, next) => {
   try {
     const { answers } = req.body;
 
-    if(!Array.isArray(answers)) {
+    if (!Array.isArray(answers)) {
       return res.status(400).json({
         success: false,
         error: 'Answers must be an array',
@@ -115,32 +118,58 @@ export const submitQuiz = async (req, res, next) => {
       });
     }
 
-    // Process answers and calculate score
     let correctCount = 0;
     const userAnswers = [];
 
-    answers.forEach(answer => {
-      const { questionIndex, selectedAnswer } = answer;
+    quiz.questions.forEach((question, index) => {
+      const submittedAnswer = answers.find(a => Number(a.questionIndex) === index);
+      
+      let isCorrect = false;
+      let selectedAnswerText = 'Not Answered';
 
-      if (questionIndex < quiz.questions.length) {
-        const question = quiz.questions[questionIndex];
-        const isCorrect = selectedAnswer === question.correctAnswer;
+      if (submittedAnswer && submittedAnswer.selectedAnswer !== undefined) {
+        selectedAnswerText = String(submittedAnswer.selectedAnswer).trim();
 
-        if (isCorrect)  correctCount++;
+        const normSelectedText = selectedAnswerText.toLowerCase();
+        const normDbCorrect = String(question.correctAnswer || '').trim().toLowerCase();
 
-        userAnswers.push({
-          questionIndex,
-          selectedAnswer,
-          isCorrect,
-          answeredAt: new Date()
-         });
+        // Strip structural prefixes (like "01.", "1.", "3. ")
+        const cleanDbCorrect = normDbCorrect.replace(/^0*(\d+)\.?\s*/, '$1').replace(/^\w\.\s*/, '');
+        const cleanSelectedText = normSelectedText.replace(/^0*(\d+)\.?\s*/, '$1').replace(/^\w\.\s*/, '');
+
+        // Resolve absolute index mapping variants safely
+        const rawZeroBasedIdx = question.options ? question.options.findIndex(opt => opt.trim() === selectedAnswerText) : -1;
+        const stringZeroIndex = String(rawZeroBasedIdx);
+        const stringOneIndex = String(rawZeroBasedIdx + 1);
+
+        // ✅ MULTI-BASE LOGICAL EVALUATION BLOCK
+        if (
+          normSelectedText === normDbCorrect ||                           // Direct raw string match
+          cleanSelectedText === cleanDbCorrect ||                         // Cleaned string match
+          normSelectedText.includes(cleanDbCorrect) ||                    // Sub-string contains check
+          normDbCorrect.includes(normSelectedText) ||                    // Counter sub-string contains check
+          stringZeroIndex === normDbCorrect ||                            // Zero-based index match ("2" === "2")
+          stringOneIndex === normDbCorrect ||                             // One-based index match ("3" === "3")
+          stringZeroIndex === cleanDbCorrect ||                           // Cleaned zero-based index match
+          stringOneIndex === cleanDbCorrect                               // Cleaned one-based index match
+        ) {
+          isCorrect = true;
         }
+      }
+
+      if (isCorrect) correctCount++;
+
+      userAnswers.push({
+        questionIndex: index,
+        selectedAnswer: selectedAnswerText,
+        isCorrect: Boolean(isCorrect),
+        answeredAt: new Date()
+      });
     });
 
-    // Calculate score as percentage
-    const score = Math.round((correctCount / quiz.totalQuestions) * 100);
+    const totalQuizQuestions = quiz.questions.length || quiz.totalQuestions || 1;
+    const score = Math.round((correctCount / totalQuizQuestions) * 100);
 
-    // Update quiz with results
     quiz.userAnswers = userAnswers;
     quiz.score = score;
     quiz.completedAt = new Date();
@@ -153,15 +182,16 @@ export const submitQuiz = async (req, res, next) => {
         quizId: quiz._id,
         score,
         correctCount,
-        totalQuestions: quiz.totalQuestions,
+        totalQuestions: totalQuizQuestions,
         percentage: score,
         userAnswers
       },
       message: 'Quiz submitted successfully'
     });
   } catch (error) {
+    console.error("Submission processing crashed:", error);
     next(error);
-  } 
+  }
 };
 
 // @desc  Get quiz results
@@ -201,7 +231,7 @@ export const getQuizResults = async (req, res, next) => {
         correctAnswer: question.correctAnswer,
         selectedAnswer: userAnswer ?.selectedAnswer || null,
         isCorrect: userAnswer ?.isCorrect || false,
-        explainer: question.explanation
+        explanation: question.explanation
       };
     });
 

@@ -11,13 +11,13 @@ const Tabs = ({ tabs, activeTab, setActiveTab }) => {
                             onClick={() => setActiveTab(tab.name)}
                             className={`relative pb-4 px-6 text-sm font-semibold transition-all duration-200 whitespace-nowrap
                                 ${activeTab === tab.name
-                                    ? 'text-emerald-600'
+                                    ? 'text-slate-800'
                                     : 'text-slate-600 hover:text-slate-900'
                                 }`}
                         >
                             <span className="relative z-10">{tab.label}</span>
                             {activeTab === tab.name && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 z-20 animate-fade-in" />
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-600 z-20 animate-fade-in" />
                             )}
                             {activeTab === tab.name && (
                                 <div className="absolute inset-0 bg-slate-50/50 rounded-t-lg z-0" />

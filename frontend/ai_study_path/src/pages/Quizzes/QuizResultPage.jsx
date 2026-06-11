@@ -70,7 +70,7 @@ const QuizResultPage = () => {
       <div className='mb-6'>
         <Link
            to={`/documents/${quiz.document._id}`}
-           className='group inline-flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-slate-600 transition-all duration-200'
+           className='group inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-all duration-200'
         >
           <ArrowLeft className='w-4 h-4 group-hover:translate-x-1 transition-transform duration-200' strokeWidth={2} />
           Back to Document
@@ -82,8 +82,8 @@ const QuizResultPage = () => {
       {/* Score Card */}
       <div className='bg-white/80 backdrop-blur-xl border-2 border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 p-8 mb-8'>
         <div className='text-center space-y-6'>
-          <div className='inline-flex items-center justify-center w-15 h-15 rounded-2xl bg-linear-to-br from-emerald-100 to-teal-100 shadow-lg shadow-emerald-500/20'>
-            <Trophy className='w-7 h-7 text-emerald-600' strokeWidth={2} />
+          <div className='inline-flex items-center justify-center w-15 h-15 rounded-2xl bg-linear-to-br from-slate-100 to-teal-200 shadow-lg shadow-emerald-500/20'>
+            <Trophy className='w-7 h-7 text-slate-600' strokeWidth={2} />
           </div>
 
           <div>
@@ -268,7 +268,7 @@ const QuizResultPage = () => {
       {/* Action Button */}
       <div className='mt-8 flex justify-center'>
         <Link to={`/documents/${quiz.document._id}`}>
-           <button className='group relative px-8 h-12 bg-linear-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-emerald-500/25 active:scale-95 overflow-hidden'>
+           <button className='group relative px-8 h-12 bg-linear-to-r from-slate-500 to-slate-800 hover:from-slate-600 hover:to-slate-900 text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-emerald-500/25 active:scale-95 overflow-hidden'>
             <span className='relative z-10 flex items-center gap-2'>
               <ArrowLeft className='w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200' strokeWidth={2.5} />
               Return to Document

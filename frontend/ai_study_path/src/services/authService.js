@@ -39,7 +39,7 @@ const updateProfile = async (userData) => {
 
 const changePassword = async (passwords) => {
   try {
-    const response = await axiosInstance.post(API_PATHS.AUTH.CHANGE_PASSWORD, passwords);
+    const response = await axiosInstance.put(API_PATHS.AUTH.CHANGE_PASSWORD, passwords);
     return response.data;
   }
   catch (error) {

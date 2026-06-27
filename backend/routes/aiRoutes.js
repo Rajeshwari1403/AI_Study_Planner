@@ -5,7 +5,8 @@ import {
     generateSummary,
     chat,
     explainConcept,
-    getChatHistory
+    getChatHistory,
+    generateMindMap
 } from '../controllers/aiController.js';
 import protect from '../middleware/auth.js';
 
@@ -19,5 +20,10 @@ router.post('/generate-summary', generateSummary);
 router.post('/chat', chat);
 router.post('/explain-concept', explainConcept);
 router.get('/chat-history/:documentId', getChatHistory);
+router.post(
+    '/generate-mindmap',
+    protect,
+    generateMindMap
+);
 
 export default router;

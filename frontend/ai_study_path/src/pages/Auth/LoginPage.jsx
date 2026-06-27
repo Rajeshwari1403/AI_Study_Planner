@@ -26,7 +26,7 @@ const LoginPage = () => {
       toast.success('Logged in successfully');
       navigate('/dashboard');
     } catch(err) {
-      setError(err.message || 'Failed to login. Please check the credentials');
+      setError(err.message || 'Open your eyes properly and enter credentials');
       toast.error(err.message || "Failed to login");
     } finally {
       setLoading(false);
@@ -109,11 +109,11 @@ const LoginPage = () => {
               {loading ? (
                 <>
                   <div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' />
-                  Creating account...
+                  Logging in you buddy.....
                 </>
               ) : (
                 <>
-                  Create Account
+                  Login Account
                   <ArrowRight className='w-4 h-4 group-hover:translate-x-1 transition-transform duration-200' strokeWidth={2.5} />
                 </>
               )}

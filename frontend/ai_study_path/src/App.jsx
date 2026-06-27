@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/Auth/LoginPage.jsx'
 import RegisterPage from './pages/Auth/RegisterPage.jsx'
@@ -15,8 +15,43 @@ import ProfilePage from './pages/Profile/ProfilePage.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 
 const App = () => {
-  const {isAuthenticated, loading} = useAuth()
- 
+  const { isAuthenticated, loading } = useAuth()
+
+  useEffect(() => {
+    const originalTitle = "StudyPilot AI";
+
+    const messages = [
+      "👀 Hey! Come Back!",
+      "📚 Your Notes Miss You!",
+      "🧠 Your AI is Waiting...",
+      "🚀 Continue Your Learning!"
+    ];
+
+    let interval;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        let index = 0;
+        document.title = messages[index];
+
+        interval = setInterval(() => {
+          index = (index + 1) % messages.length;
+          document.title = messages[index];
+        }, 1500);
+      } else {
+        clearInterval(interval);
+        document.title = originalTitle;
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className='flex items-center justify-center h-screen'>
@@ -30,10 +65,10 @@ const App = () => {
       <Routes>
         <Route 
            path="/"
-           element = {isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
+           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
         />
-        <Route path="/login" element={< LoginPage />} />
-        <Route path="/register" element={< RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

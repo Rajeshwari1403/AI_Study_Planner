@@ -3,12 +3,34 @@ import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 if (!process.env.GEMINI_API_KEY) {
   console.error('FATAL ERROR: GEMINI_API_KEY is not set in the environment variables.');
   process.exit(1);
 }
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const generateWithRetry = async (model, prompt, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+      });
+
+      return response;
+    } catch (error) {
+      if (error.status === 503 && i < retries - 1) {
+        console.log(`Gemini busy. Retrying... (${i + 1}/${retries})`);
+        await sleep(2000 * (i + 1)); // 2s, 4s, 6s
+        continue;
+      }
+
+      throw error;
+    }
+  }
+};
 
 /**
  * Generate flashcards from text
@@ -29,10 +51,10 @@ Text:
 ${text.substring(0, 15000)}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-    });
+    const response = await generateWithRetry(
+      "gemini-2.5-flash-lite",
+      prompt
+    );
 
     const generatedText = response.text;
 
@@ -65,7 +87,8 @@ ${text.substring(0, 15000)}`;
     return flashcards.slice(0, count);
   } catch (error) {
     console.error('Gemini API error:', error);
-    throw new Error('Failed to generate flashcards');
+    error.status = error.status || 500;
+    throw error;
   }
 };
 
@@ -93,10 +116,11 @@ Text:
 ${text.substring(0, 15000)}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-    });
+    // Fixed: Now using generateWithRetry to handle potential 503 throttling
+    const response = await generateWithRetry(
+      "gemini-2.5-flash-lite",
+      prompt
+    );
 
     const generatedText = response.text;
 
@@ -133,7 +157,8 @@ ${text.substring(0, 15000)}`;
     return questions.slice(0, numQuestions);
   } catch (error) {
     console.error('Gemini API error:', error);
-    throw new Error('Failed to generate quiz');
+    error.status = error.status || 500;
+    throw error;
   }
 };
 
@@ -149,16 +174,18 @@ Text:
 ${text.substring(0, 20000)}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-    });
+    // Fixed: Now using generateWithRetry to handle potential 503 throttling
+    const response = await generateWithRetry(
+      "gemini-2.5-flash-lite",
+      prompt
+    );
 
     const generatedText = response.text;
     return generatedText;
   } catch (error) {
     console.error('Gemini API error:', error);
-    throw new Error('Failed to generate summary');
+    error.status = error.status || 500;
+    throw error;
   }
 };
 
@@ -169,7 +196,6 @@ ${text.substring(0, 20000)}`;
  * @returns {Promise<string>}
  */
 export const chatWithContext = async (question, context) => {
-
   if (!context || context.trim().length === 0) {
     return "No context found in document.";
   }
@@ -184,12 +210,18 @@ ${question}
 Answer:
 `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    contents: prompt,
-  });
+  try {
+    const response = await generateWithRetry(
+      "gemini-2.5-flash-lite",
+      prompt
+    );
 
-  return response.text;
+    return response.text;
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    error.status = error.status || 500;
+    throw error;
+  }
 };
 
 /**
@@ -205,15 +237,17 @@ Context:
 ${context.substring(0, 10000)}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: prompt,
-    });
+    // Fixed: Now using generateWithRetry to handle potential 503 throttling
+    const response = await generateWithRetry(
+      "gemini-2.5-flash-lite",
+      prompt
+    );
 
     const generatedText = response.text;
     return generatedText;
   } catch (error) {
     console.error('Gemini API error:', error);
-    throw new Error('Failed to explain concept');
+    error.status = error.status || 500;
+    throw error;
   }
 };

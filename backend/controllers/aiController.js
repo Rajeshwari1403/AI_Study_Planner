@@ -4,6 +4,13 @@ import Quiz from '../models/Quiz.js';
 import ChatHistory from '../models/ChatHistory.js';
 import * as geminiService from '../utils/geminiService.js';
 import { findRelevantChunks } from '../utils/textChunker.js';
+import * as groqService from "../utils/groqService.js";
+
+// Helper function to extract text with a safer limit for the free tier
+const getClampedText = (text, limit = 8000) => {
+    if (!text) return '';
+    return text.substring(0, limit);
+};
 
 // @desc    Generate flashcards from document
 // @route   POST /api/ai/generate-flashcards
@@ -34,32 +41,74 @@ export const generateFlashcards = async (req, res, next) => {
             });
         }
 
-        //Genarate flashcards using Gemini
+        // Generate flashcards using Gemini
         const cards = await geminiService.generateFlashcards(
             document.extractedText,
             parseInt(count)
         );
 
-        //Save to database
+        // Save to database
         const flashcardSet = await Flashcard.create({
             userId: req.user._id,
             documentId: document._id,
             cards: cards.map(card => ({
                 question: card.question,
-                answer:card.answer,
+                answer: card.answer,
                 difficulty: card.difficulty,
-                reviewCount:0,
+                reviewCount: 0,
                 isStarred: false
             }))
         });
 
         res.status(201).json({
-            success:true,
+            success: true,
             data: flashcardSet,
             message: 'Flashcards generated successfully'
         });
     } catch (error) {
-        next(error);
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Failed to generate flashcards'
+        });
+    }
+};
+
+// @desc    Generate mind map from document
+// @route   POST /api/ai/generate-mindmap
+// @access  Private
+export const generateMindMap = async (req, res, next) => {
+    try {
+        const { documentId, topic } = req.body;
+
+        const document = await Document.findOne({
+            _id: documentId,
+            userId: req.user._id,
+            status: 'ready'
+        });
+
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                error: 'Document not found'
+            });
+        }
+
+        // Clamped to 8000 characters to prevent overloading the free tier
+        const mindMap = await groqService.generateMindMap(
+    getClampedText(document.extractedText, 8000),
+    topic
+);
+
+        res.status(200).json({
+            success: true,
+            data: mindMap
+        });
+
+    } catch (error) {
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Failed to generate mind map'
+        });
     }
 };
 
@@ -92,9 +141,9 @@ export const generateQuiz = async (req, res, next) => {
             });
         }
 
-        // Generate quiz using Gemini
+        // Generate quiz using Gemini - Clamped to 8000 characters
         const questions = await geminiService.generateQuiz(
-            document.extractedText,
+            getClampedText(document.extractedText, 8000),
             parseInt(numQuestions)
         );
 
@@ -110,13 +159,16 @@ export const generateQuiz = async (req, res, next) => {
         }); 
         
         res.status(201).json({
-            success:true,
-            data:quiz,
+            success: true,
+            data: quiz,
             message: 'Quiz Generated Successfully'
         });
 
     } catch (error) {
-        next(error);
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Failed to generate quiz'
+        });
     }
 };
 
@@ -161,7 +213,10 @@ export const generateSummary = async (req, res, next) => {
             message: 'Summary generated successfully'
         });
     } catch (error) {
-        next(error);
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Failed to generate summary'
+        });
     }
 };
 
@@ -195,10 +250,9 @@ export const chat = async (req, res, next) => {
 
         // Find relevant chunks
         const relevantChunks = findRelevantChunks(document.chunks, question, 3);
-        //const chunkIndicies = relevantChunks.map(c => c.chunk.index);
         const chunkIndicies = relevantChunks
-        .filter(c => c)
-        .map(c => c.index);
+            .filter(c => c)
+            .map(c => c.index);
 
         // Get or create chat history
         let chatHistory = await ChatHistory.findOne({
@@ -252,9 +306,12 @@ export const chat = async (req, res, next) => {
                 chatHistoryId: chatHistory._id
             },
             message: 'Chat response generated successfully'
-        })
+        });
     } catch (error) {
-        next(error);
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Failed to complete chat request'
+        });
     }
 };
 
@@ -302,7 +359,10 @@ export const explainConcept = async (req, res, next) => {
             message: 'Concept explanation generated successfully'
         });
     } catch (error) {
-        next(error);
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Failed to explain concept'
+        });
     }
 };
 
@@ -342,8 +402,10 @@ export const getChatHistory = async (req, res, next) => {
             message: 'Chat history retrieved successfully'
         });
 
-        
     } catch (error) {
-        next(error);
+        return res.status(error.status || 500).json({
+            success: false,
+            error: error.message || 'Failed to retrieve chat history'
+        });
     }
 };

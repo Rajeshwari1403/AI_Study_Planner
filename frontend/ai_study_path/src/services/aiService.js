@@ -27,6 +27,14 @@ const generateSummary = async (documentId) => {
     throw error.response?.data || { message: 'Failed to generate Summary' };
   } 
 };
+const generateMindMap = async (documentId, topic) => {
+    const response = await axiosInstance.post(
+        '/api/ai/generate-mindmap',
+        { documentId, topic }
+    );
+
+    return response.data.data;
+};
 
 const chat = async (documentId, message) => {
   try {
@@ -61,7 +69,8 @@ const aiService = {
   generateSummary,
   chat,
   explainConcept,
-  getChatHistory
+  getChatHistory,
+  generateMindMap
 };
 
 export default aiService;
